@@ -1,0 +1,5 @@
+# .gitignore
+
+# Diretório node_modules
+node_modules/
+newman/

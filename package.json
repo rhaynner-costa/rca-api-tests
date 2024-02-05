@@ -1,0 +1,29 @@
+{
+  "name": "rca-api-tests",
+  "version": "1.0.0",
+  "description": "Portifolio de testes de api com o postman",
+  "main": "index.js",
+  "scripts": {
+    "test:report": "npx newman run postman-files/meus-testes-de-apis.postman_collection.json -g postman-files/workspace.postman_globals.json -r htmlextra --reporter-htmlextra-displayProgressBar",
+    "test": "npx newman run postman-files/meus-testes-de-apis.postman_collection.json -g postman-files/workspace.postman_globals.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhaynner-costa/rca-api-tests.git"
+  },
+  "keywords": [
+    "Postman",
+    "api",
+    "newman"
+  ],
+  "author": "Rhaynner Costa",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rhaynner-costa/rca-api-tests/issues"
+  },
+  "homepage": "https://github.com/rhaynner-costa/rca-api-tests#readme",
+  "dependencies": {
+    "newman": "^6.1.1",
+    "newman-reporter-htmlextra": "^1.23.0"
+  }
+}
