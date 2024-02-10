@@ -1,5 +1,8 @@
 # rca-api-tests
-Portifolio de testes de api com o postman
+Portifolio de testes de api com o postman e newman
+
+# Requisitos
+Node.js instalado
 
 # Dependencias
 Na raiz do projeto rodar o comando: 
