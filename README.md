@@ -16,3 +16,7 @@ Na raiz do projeto rodar o comando:
 npm run test 
 
 npm run test:report 
+
+# Documentação de referencia:
+
+Servidor de API: https://serverest.dev/#/
