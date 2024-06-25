@@ -1,0 +1,875 @@
+{
+	"info": {
+		"_postman_id": "399e7204-6282-4067-a95f-fa5725c27343",
+		"name": "rca-api-tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32095774"
+	},
+	"item": [
+		{
+			"name": "login",
+			"item": [
+				{
+					"name": "login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"fulano@qa.com\",\r\n  \"password\": \"teste\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "usuarios",
+			"item": [
+				{
+					"name": "testa-fluxo-do-usuario",
+					"item": [
+						{
+							"name": "cadastrar-usuario",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Retornou o statusCode 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											"\r",
+											"if (pm.response.code === 201) {\r",
+											"    \r",
+											"    pm.test(\"Valida mensagem de cadastro com sucesso\", () => {\r",
+											"        pm.expect(jsonData.message).to.equal(\"Cadastro realizado com sucesso\")\r",
+											"    });\r",
+											"\r",
+											"    pm.environment.set('userId', jsonData._id)\r",
+											"\r",
+											"} else {\r",
+											"    console.log(\"O status code retornado não é 201. Testes adicionais não foram executados.\");\r",
+											"\r",
+											"    pm.test(\"Status code is not 201\", function () {\r",
+											"        pm.expect.fail(\"O status code retornado não é 201. Testes adicionais não foram executados.\");\r",
+											"    });\r",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"nome\": \"{{$randomFullName}}\",\r\n  \"email\": \"{{$randomEmail}}\",\r\n  \"password\": \"teste123\",\r\n  \"administrador\": \"true\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/usuarios",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "listar-usuario-por-id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Retornou o statusCode 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"if (pm.response.code === 200) {\r",
+											"    pm.test(\"Response body não retornou vazio\", function () {\r",
+											"        pm.expect(pm.response.text()).to.not.be.empty;\r",
+											"    });\r",
+											"\r",
+											"    pm.environment.set('userName', jsonData.nome);\r",
+											"    pm.environment.set('userEmail', jsonData.email);\r",
+											"    pm.environment.set('userPassword', jsonData.password);\r",
+											"\r",
+											"} else {\r",
+											"    console.log(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+											"    pm.test(\"Status code is not 200\", function () {\r",
+											"        pm.expect.fail(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+											"    });\r",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios",
+										"{{userId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "editar-usuario",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Retornou o statusCode 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"Rhaynner Costa\",\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"123teste\",\n  \"administrador\": \"false\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios",
+										"{{userId}}"
+									]
+								},
+								"description": "Não é permitido cadastrar usuário com email já utilizado.\nCaso não seja encontrado usuário com o ID informado é realizado novo cadastro ao invés de alteração.\n"
+							},
+							"response": []
+						},
+						{
+							"name": "listar-usuario-editado",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Retornou o statusCode 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"\r",
+											"});\r",
+											"\r",
+											"if (pm.response.code === 200) {\r",
+											"\r",
+											"    pm.test(\"Valida se retornou o nome\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('nome');\r",
+											"        pm.expect(jsonData.nome).to.not.be.null;\r",
+											"        pm.expect(jsonData.nome).to.be.a('string');\r",
+											"         pm.expect(jsonData.nome, 'Erro: nao retornou o nome do usuario esperado').to.equal('Rhaynner Costa')\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"    pm.test(\"Valida se retornou o email\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('email');\r",
+											"        pm.expect(jsonData.email).to.not.be.null;\r",
+											"        pm.expect(jsonData.email).to.be.a('string');\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"    pm.test(\"Valida se retornou o password\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('password');\r",
+											"        pm.expect(jsonData.password).to.not.be.null;\r",
+											"        pm.expect(jsonData.password).to.be.a('string');\r",
+											"         pm.expect(jsonData.password, 'Erro: nao retornou o password do usuario esperado').to.equal('123teste')\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"    pm.test(\"Valida se retornou o parametro administrador\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('administrador');\r",
+											"        pm.expect(jsonData.administrador).to.not.be.null;\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"     pm.test(\"Valida retornou o id\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('_id');\r",
+											"        pm.expect(jsonData._id).to.not.be.null;\r",
+											"        pm.expect(jsonData._id).to.be.a('string');\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"} else {\r",
+											"\r",
+											"    console.log(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+											"\r",
+											"    pm.test(\"Status code is not 200\", function () {\r",
+											"        pm.expect.fail(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+											"    });\r",
+											"}\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"setTimeout(function(){}, 2000);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios",
+										"{{userId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "excluir-usuario",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonResponse = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Retornou o statusCode 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Valida mensagem de usuario excluido\", function () {\r",
+											"    pm.expect(jsonResponse.message).to.equal( \"Registro excluído com sucesso\")\r",
+											"\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios",
+										"{{userId}}"
+									]
+								},
+								"description": "Não é permitido excluir usuário com carrinho."
+							},
+							"response": []
+						},
+						{
+							"name": "listar-usuario-excluido",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonResponse = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Retornou o statusCode 400\", function () {\r",
+											"    pm.response.to.have.status(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Validar menagem que nenhum usuario foi encontrado\", function () {\r",
+											"    pm.expect(jsonResponse.message).to.equal(\"Usuário não encontrado\")\r",
+											"\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios",
+										"{{userId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "testa-lista-usuarios",
+					"item": [
+						{
+							"name": "lista-usuarios-teste-contrato",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const schema = ",
+											"{",
+											"    \"type\": \"object\",",
+											"    \"required\": [",
+											"        \"quantidade\",",
+											"        \"usuarios\"",
+											"    ],",
+											"    \"additionalProperties\": false,",
+											"    \"properties\": {",
+											"        \"quantidade\": {",
+											"            \"type\": \"number\"",
+											"        },",
+											"        \"usuarios\": {",
+											"            \"type\": \"array\",",
+											"            \"additionalItems\": false,",
+											"            \"items\": {",
+											"                \"type\": \"object\",",
+											"                \"required\": [",
+											"                    \"nome\",",
+											"                    \"email\",",
+											"                    \"password\",",
+											"                    \"administrador\",",
+											"                    \"_id\"",
+											"                ],",
+											"                \"additionalProperties\": false,",
+											"                \"properties\": {",
+											"                    \"nome\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"email\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"password\": {",
+											"                        \"type\": \"string\"",
+											"                    },",
+											"                    \"administrador\": {",
+											"                        \"enum\": [\"true\", \"false\"]",
+											"                    },",
+											"                    \"_id\": {",
+											"                        \"type\": \"string\"",
+											"                    }",
+											"                }",
+											"            }",
+											"        }",
+											"    }",
+											"} ",
+											"",
+											"var response = pm.response.json();",
+											"",
+											"pm.test('Teste de contrato', () => {",
+											"    const Ajv = require('ajv')",
+											"    const ajv = new Ajv({ allErrors: true })",
+											"",
+											"    const retornoValidacao = ajv.validate(schema, response)",
+											"",
+											"    pm.expect(retornoValidacao, JSON.stringify(ajv.errors)).to.be.true",
+											"})",
+											"",
+											"//console.info(pm.variables.get('schema'))",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// const schema = \r",
+											"// {\r",
+											"//     \"type\": \"object\",\r",
+											"//     \"required\": [\r",
+											"//         \"quantidade\",\r",
+											"//         \"usuarios\"\r",
+											"//     ],\r",
+											"//     \"additionalProperties\": false,\r",
+											"//     \"properties\": {\r",
+											"//         \"quantidade\": {\r",
+											"//             \"type\": \"number\"\r",
+											"//         },\r",
+											"//         \"usuarios\": {\r",
+											"//             \"type\": \"array\",\r",
+											"//             \"additionalItems\": false,\r",
+											"//             \"items\": {\r",
+											"//                 \"type\": \"object\",\r",
+											"//                 \"required\": [\r",
+											"//                     \"nome\",\r",
+											"//                     \"email\",\r",
+											"//                     \"password\",\r",
+											"//                     \"administrador\",\r",
+											"//                     \"_id\"\r",
+											"//                 ],\r",
+											"//                 \"additionalProperties\": false,\r",
+											"//                 \"properties\": {\r",
+											"//                     \"nome\": {\r",
+											"//                         \"type\": \"string\"\r",
+											"//                     },\r",
+											"//                     \"email\": {\r",
+											"//                         \"type\": \"string\"\r",
+											"//                     },\r",
+											"//                     \"password\": {\r",
+											"//                         \"type\": \"string\"\r",
+											"//                     },\r",
+											"//                     \"administrador\": {\r",
+											"//                         \"type\": \"string\"\r",
+											"//                     },\r",
+											"//                     \"_id\": {\r",
+											"//                         \"type\": \"string\"\r",
+											"//                     }\r",
+											"//                 }\r",
+											"//             }\r",
+											"//         }\r",
+											"//     }\r",
+											"// } \r",
+											"\r",
+											"// /*\r",
+											"// converter para json schemma: https://jsonschema.net\r",
+											"// selecionar:\r",
+											"// Json types only\r",
+											"// keywords: additionalitems, additionalPropertires(marcar depois como false), items, properties, required, type\r",
+											"// */"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/usuarios",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "lista-usuarios",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Retornou o statusCode 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"\r",
+											"});\r",
+											"\r",
+											"if (pm.response.code === 200) {\r",
+											"\r",
+											"    pm.test(\"Valida quantidade de registros na listagem\", function () {\r",
+											"     pm.expect(jsonData).to.have.property('quantidade');\r",
+											"     pm.expect(jsonData.quantidade).to.be.a('number');\r",
+											"     pm.expect(jsonData.usuarios.length).to.be.at.least(1, \"The number of records should not be zero\");\r",
+											"});\r",
+											"\r",
+											"    pm.test(\"Valida se dados do array são validos\", function () {\r",
+											"        var jsonData = pm.response.json();\r",
+											"        var array = jsonData.usuarios;\r",
+											"\r",
+											"        array.forEach(function (element, index) {\r",
+											"            pm.expect(element, `Elemento na posição ${index} é nulo`).to.not.be.null;\r",
+											"        });\r",
+											"    });\r",
+											"\r",
+											"} else {\r",
+											"\r",
+											"    console.log(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+											"\r",
+											"    pm.test(\"Status code is not 200\", function () {\r",
+											"        pm.expect.fail(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+											"    });\r",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/usuarios",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "lista-usuario-por-id-teste-contrato",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const schema = \r",
+											"{\r",
+											"    \"type\": \"object\",\r",
+											"    \"required\": [\r",
+											"        \"nome\",\r",
+											"        \"email\",\r",
+											"        \"password\",\r",
+											"        \"administrador\",\r",
+											"        \"_id\"\r",
+											"    ],\r",
+											"    \"additionalProperties\": false,\r",
+											"    \"properties\": {\r",
+											"        \"nome\": {\r",
+											"            \"type\": \"string\"\r",
+											"        },\r",
+											"        \"email\": {\r",
+											"            \"type\": \"string\"\r",
+											"        },\r",
+											"        \"password\": {\r",
+											"            \"type\": \"string\"\r",
+											"        },\r",
+											"        \"administrador\": {\r",
+											"            \"type\": \"string\"\r",
+											"        },\r",
+											"        \"_id\": {\r",
+											"            \"type\": \"string\"\r",
+											"        }\r",
+											"    }\r",
+											"}\r",
+											"\r",
+											"var response = pm.response.json();\r",
+											"\r",
+											"pm.test('Teste de contrato', () => {\r",
+											"    const Ajv = require('ajv')\r",
+											"    const ajv = new Ajv({ allErrors: true })\r",
+											"\r",
+											"    const retornoValidacao = ajv.validate(schema, response)\r",
+											"\r",
+											"    pm.expect(retornoValidacao, JSON.stringify(ajv.errors)).to.be.true\r",
+											"})\r",
+											"\r",
+											"//console.info(pm.variables.get('schema'))\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// buscar o primeiro id da listagem\r",
+											"const baseUrl = pm.environment.get('baseUrl');\r",
+											"\r",
+											"const buscarIdUsuario = {\r",
+											"    url: `${baseUrl}/usuarios`,\r",
+											"    method: 'GET',\r",
+											"    header: {\r",
+											"        'content-type': 'application/json; charset=utf-8'\r",
+											"    }\r",
+											"};\r",
+											"\r",
+											"pm.sendRequest(buscarIdUsuario, function (erro, resposta) {\r",
+											"    pm.variables.set('testDataID', resposta.json().usuarios[0]._id)\r",
+											"    //console.info(pm.variables.get('testDataID'))\r",
+											"\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/usuarios/{{testDataID}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios",
+										"{{testDataID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "lista-usuario-por-id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Retornou o statusCode 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"\r",
+											"});\r",
+											"\r",
+											"if (pm.response.code === 200) {\r",
+											"\r",
+											"    pm.test(\"Valida se retornou o nome\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('nome');\r",
+											"        pm.expect(jsonData.nome).to.not.be.null;\r",
+											"        pm.expect(jsonData.nome).to.be.a('string');\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"    pm.test(\"Valida se retornou o email\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('email');\r",
+											"        pm.expect(jsonData.email).to.not.be.null;\r",
+											"        pm.expect(jsonData.email).to.be.a('string');\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"    pm.test(\"Valida se retornou o password\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('password');\r",
+											"        pm.expect(jsonData.password).to.not.be.null;\r",
+											"        pm.expect(jsonData.password).to.be.a('string');\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"    pm.test(\"Valida se retornou o parametro administrador\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('administrador');\r",
+											"        pm.expect(jsonData.administrador).to.not.be.null;\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"     pm.test(\"Valida retornou o id\", function () {\r",
+											"        pm.expect(jsonData).to.have.property('_id');\r",
+											"        pm.expect(jsonData._id).to.not.be.null;\r",
+											"        pm.expect(jsonData._id).to.be.a('string');\r",
+											"\r",
+											"    });\r",
+											"\r",
+											"} else {\r",
+											"\r",
+											"    console.log(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+											"\r",
+											"    pm.test(\"Status code is not 200\", function () {\r",
+											"        pm.expect.fail(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+											"    });\r",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// buscar o primeiro id da listagem\r",
+											"const baseUrl = pm.environment.get('baseUrl');\r",
+											"\r",
+											"const buscarIdUsuario = {\r",
+											"    url: `${baseUrl}/usuarios`,\r",
+											"    method: 'GET',\r",
+											"    header: {\r",
+											"        'content-type': 'application/json; charset=utf-8'\r",
+											"    }\r",
+											"};\r",
+											"\r",
+											"pm.sendRequest(buscarIdUsuario, function (erro, resposta) {\r",
+											"    pm.variables.set('testDataID', resposta.json().usuarios[0]._id)\r",
+											"    //console.info(pm.variables.get('testDataID'))\r",
+											"\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/usuarios/{{testDataID}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"usuarios",
+										"{{testDataID}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"console.info(pm.info.requestName)"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "userName",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": ""
+		},
+		{
+			"key": "userEmail",
+			"value": ""
+		},
+		{
+			"key": "userPassword",
+			"value": ""
+		}
+	]
+}

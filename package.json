@@ -4,8 +4,8 @@
   "description": "Portifolio de testes de api com o postman",
   "main": "index.js",
   "scripts": {
-    "test:report": "npx newman run postman-files/meus-testes-de-apis.postman_collection.json -g postman-files/workspace.postman_globals.json -r htmlextra --reporter-htmlextra-displayProgressBar",
-    "test": "npx newman run postman-files/meus-testes-de-apis.postman_collection.json -g postman-files/workspace.postman_globals.json"
+    "test:report": "npx newman run postman-files/rca-api-tests.postman_collection.json -e postman-files/online-server-rest.postman_environment.json -r htmlextra --reporter-htmlextra-displayProgressBar",
+    "test": "npx newman run postman-files/rca-api-tests.postman_collection.json -e postman-files/online-server-rest.postman_environment.json"
   },
   "repository": {
     "type": "git",
