@@ -13,12 +13,102 @@
 					"name": "login",
 					"event": [
 						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const url = pm.environment.get('baseUrl');\r",
+									"const email = pm.environment.get('userEmail');\r",
+									"\r",
+									"// Função para criar um novo usuário caso ele não exista\r",
+									"function criarUsuario() {\r",
+									"    const newUser = {\r",
+									"        \"nome\": \"Rubye\",\r",
+									"        \"email\": email,\r",
+									"        \"password\": \"teste123\",\r",
+									"        \"administrador\": \"true\"\r",
+									"    };\r",
+									"\r",
+									"    pm.sendRequest({\r",
+									"        url: `${url}/usuarios`, \r",
+									"        method: 'POST',\r",
+									"        header: {\r",
+									"            'Content-Type': 'application/json',\r",
+									"            'Accept': 'application/json'\r",
+									"        },\r",
+									"        body: {\r",
+									"            mode: 'raw',\r",
+									"            raw: JSON.stringify(newUser)\r",
+									"        }\r",
+									"    }, function (err, res) {\r",
+									"        if (err) {\r",
+									"            console.log('Erro ao criar o usuário:', err);\r",
+									"        } else if (res.code === 201) {\r",
+									"            const responseData = res.json();\r",
+									"            console.log('Usuário criado com sucesso:', responseData);\r",
+									"            pm.environment.set('userId', responseData._id); // Armazena o ID do novo usuário\r",
+									"        } else {\r",
+									"            console.log('Falha ao criar usuário:', res.json());\r",
+									"        }\r",
+									"    });\r",
+									"}\r",
+									"\r",
+									"// Verificar se o usuário já existe\r",
+									"pm.sendRequest({\r",
+									"    url: `https://serverest.dev/usuarios?email=${encodeURIComponent(email)}`,\r",
+									"    method: 'GET',\r",
+									"    header: {\r",
+									"        'Accept': 'application/json'\r",
+									"    }\r",
+									"}, function (err, res) {\r",
+									"    if (err) {\r",
+									"        console.log('Erro na requisição de verificação:', err);\r",
+									"    } else {\r",
+									"        const responseData = res.json();\r",
+									"\r",
+									"        // Se o usuário for encontrado, armazenar o ID\r",
+									"        if (responseData.usuarios && responseData.usuarios.length > 0) {\r",
+									"            console.log('Usuário encontrado:', responseData.usuarios[0]);\r",
+									"            pm.environment.set('userId', responseData.usuarios[0]._id);\r",
+									"        } else {\r",
+									"            console.log('Usuário não encontrado, criando um novo...');\r",
+									"            criarUsuario();\r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Retornou o statusCode 200\", function () {\r",
 									"    pm.response.to.have.status(200);\r",
-									"});"
+									"});\r",
+									"\r",
+									"// Obtém o cabeçalho Authorization da resposta\r",
+									"const authHeader = jsonData.authorization;\r",
+									"\r",
+									"// Verifica se o cabeçalho existe e se contém o prefixo \"Bearer\"\r",
+									"if (authHeader && authHeader.startsWith('Bearer ')) {\r",
+									"    // Extrai apenas o token (remove o \"Bearer \" do início)\r",
+									"    const token = authHeader.split(' ')[1];\r",
+									"    \r",
+									"    // Armazena o token em uma variável de ambiente\r",
+									"    pm.environment.set('authToken', token);\r",
+									"    \r",
+									"    console.log('Token armazenado:', token);\r",
+									"    \r",
+									"} else {\r",
+									"    console.log('Cabeçalho Authorization não encontrado ou incorreto');\r",
+									"}\r",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -27,12 +117,22 @@
 					],
 					"request": {
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"email\": \"fulano@qa.com\",\r\n  \"password\": \"teste\"\r\n}",
+							"raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"teste123\"\n}",
 							"options": {
 								"raw": {
+									"headerFamily": "json",
 									"language": "json"
 								}
 							}
@@ -45,9 +145,103 @@
 							"path": [
 								"login"
 							]
-						}
+						},
+						"description": "A duração do token retornado em authorization é de 600 segundos (10 minutos). Caso esteja expirado irá receber status code 401 (Unauthorized).\n"
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Login realizado com sucesso",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"<string>\",\n  \"password\": \"<string>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/login",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"login"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\",\n  \"authorization\": \"<string>\"\n}"
+						},
+						{
+							"name": "E-mail e/ou senha inválidos",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"<string>\",\n  \"password\": \"<string>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/login",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"login"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						}
+					]
 				}
 			]
 		},
@@ -86,7 +280,7 @@
 											"        pm.expect(jsonData.message).to.equal(\"Cadastro realizado com sucesso\")\r",
 											"    });\r",
 											"\r",
-											"    pm.environment.set('userId', jsonData._id)\r",
+											"    pm.collectionVariables.set('userIdTemp', jsonData._id)\r",
 											"\r",
 											"} else {\r",
 											"    console.log(\"O status code retornado não é 201. Testes adicionais não foram executados.\");\r",
@@ -143,15 +337,13 @@
 											"        pm.expect(pm.response.text()).to.not.be.empty;\r",
 											"    });\r",
 											"\r",
-											"    pm.environment.set('userName', jsonData.nome);\r",
-											"    pm.environment.set('userEmail', jsonData.email);\r",
-											"    pm.environment.set('userPassword', jsonData.password);\r",
+											"    pm.collectionVariables.set('userNameTemp', jsonData.nome);\r",
+											"    pm.collectionVariables.set('userEmailTemp', jsonData.email);\r",
+											"    pm.collectionVariables.set('userPasswordTemp', jsonData.password);\r",
 											"\r",
 											"} else {\r",
 											"    console.log(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
-											"    pm.test(\"Status code is not 200\", function () {\r",
-											"        pm.expect.fail(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
-											"    });\r",
+											"    \r",
 											"}"
 										],
 										"type": "text/javascript",
@@ -163,13 +355,13 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"raw": "{{baseUrl}}/usuarios/{{userIdTemp}}",
 									"host": [
 										"{{baseUrl}}"
 									],
 									"path": [
 										"usuarios",
-										"{{userId}}"
+										"{{userIdTemp}}"
 									]
 								}
 							},
@@ -218,13 +410,13 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"raw": "{{baseUrl}}/usuarios/{{userIdTemp}}",
 									"host": [
 										"{{baseUrl}}"
 									],
 									"path": [
 										"usuarios",
-										"{{userId}}"
+										"{{userIdTemp}}"
 									]
 								},
 								"description": "Não é permitido cadastrar usuário com email já utilizado.\nCaso não seja encontrado usuário com o ID informado é realizado novo cadastro ao invés de alteração.\n"
@@ -251,7 +443,7 @@
 											"        pm.expect(jsonData).to.have.property('nome');\r",
 											"        pm.expect(jsonData.nome).to.not.be.null;\r",
 											"        pm.expect(jsonData.nome).to.be.a('string');\r",
-											"         pm.expect(jsonData.nome, 'Erro: nao retornou o nome do usuario esperado').to.equal('Rhaynner Costa')\r",
+											"        pm.expect(jsonData.nome, 'Erro: nao retornou o nome do usuario esperado').to.equal('Rhaynner Costa')\r",
 											"\r",
 											"    });\r",
 											"\r",
@@ -284,12 +476,8 @@
 											"    });\r",
 											"\r",
 											"} else {\r",
-											"\r",
 											"    console.log(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
 											"\r",
-											"    pm.test(\"Status code is not 200\", function () {\r",
-											"        pm.expect.fail(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
-											"    });\r",
 											"}\r",
 											""
 										],
@@ -312,13 +500,13 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"raw": "{{baseUrl}}/usuarios/{{userIdTemp}}",
 									"host": [
 										"{{baseUrl}}"
 									],
 									"path": [
 										"usuarios",
-										"{{userId}}"
+										"{{userIdTemp}}"
 									]
 								}
 							},
@@ -356,13 +544,13 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"raw": "{{baseUrl}}/usuarios/{{userIdTemp}}",
 									"host": [
 										"{{baseUrl}}"
 									],
 									"path": [
 										"usuarios",
-										"{{userId}}"
+										"{{userIdTemp}}"
 									]
 								},
 								"description": "Não é permitido excluir usuário com carrinho."
@@ -396,13 +584,13 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/usuarios/{{userId}}",
+									"raw": "{{baseUrl}}/usuarios/{{userIdTemp}}",
 									"host": [
 										"{{baseUrl}}"
 									],
 									"path": [
 										"usuarios",
-										"{{userId}}"
+										"{{userIdTemp}}"
 									]
 								}
 							},
@@ -829,6 +1017,1196 @@
 					]
 				}
 			]
+		},
+		{
+			"name": "produto",
+			"item": [
+				{
+					"name": "cadastrar-produto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Retornou o statusCode 201\", function () {\r",
+									"    pm.response.to.have.status(201);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 201) {\r",
+									"    \r",
+									"    pm.test(\"Valida mensagem de cadastro com sucesso\", () => {\r",
+									"        pm.expect(jsonData.message).to.equal(\"Cadastro realizado com sucesso\")\r",
+									"    });\r",
+									"\r",
+									"    pm.environment.set('produtoId', jsonData._id)\r",
+									"\r",
+									"} else {\r",
+									"    console.log(\"O status code retornado não é 201. O produto não foi cadastrado\");\r",
+									"\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nome\": \"Macbook pro M3 14 Pol\",\n  \"preco\": \"999\",\n  \"descricao\": \"Notebook de 14 polegadtas, muito bom \",\n  \"quantidade\": \"1\"\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/produtos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"produtos"
+							]
+						},
+						"description": "Não é permitido cadastrar produto com nome já utilizado"
+					},
+					"response": [
+						{
+							"name": "Cadastro com sucesso",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"<string>\",\n  \"preco\": \"<integer>\",\n  \"descricao\": \"<string>\",\n  \"quantidade\": \"<integer>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/produtos",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\",\n  \"_id\": \"<string>\"\n}"
+						},
+						{
+							"name": "Já existe produto com esse nome",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"<string>\",\n  \"preco\": \"<integer>\",\n  \"descricao\": \"<string>\",\n  \"quantidade\": \"<integer>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/produtos",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						},
+						{
+							"name": "Token ausente, inválido ou expirado",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"<string>\",\n  \"preco\": \"<integer>\",\n  \"descricao\": \"<string>\",\n  \"quantidade\": \"<integer>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/produtos",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						},
+						{
+							"name": "Rota exclusiva para administradores (`administrador = true`)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"<string>\",\n  \"preco\": \"<integer>\",\n  \"descricao\": \"<string>\",\n  \"quantidade\": \"<integer>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/produtos",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos"
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						}
+					]
+				},
+				{
+					"name": "listar-produto-cadastrado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Retornou o statusCode 202\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"     pm.test(\"Valida quantidade de registros na listagem\", function () {\r",
+									"     pm.expect(jsonData).to.have.property('quantidade');\r",
+									"     pm.expect(jsonData.quantidade).to.be.a('number');\r",
+									"     pm.expect(jsonData.quantidade).to.be.at.least(1, \"The number of records should not be zero\");\r",
+									"});\r",
+									"\r",
+									"    const  array = jsonData.produtos;\r",
+									"    pm.test(\"Valida se dados do array são validos\", function () {\r",
+									"    \r",
+									"     pm.expect(array[0]).to.have.property('nome');\r",
+									"     pm.expect(array[0]).to.have.property('preco');\r",
+									"     pm.expect(array[0]).to.have.property('descricao');\r",
+									"     pm.expect(array[0]).to.have.property('quantidade');\r",
+									"     pm.expect(array[0]).to.have.property('_id');\r",
+									"\r",
+									"    });\r",
+									"\r",
+									"    pm.test(\"Valida se retornou os valores esperados do cadastro no produto\", function () {\r",
+									"     pm.expect(array[0].nome).to.be.equal(\"Macbook pro M3 14 Pol\");\r",
+									"     pm.expect(array[0].preco).to.be.equal(999);\r",
+									"     pm.expect(array[0].descricao).to.be.equal(\"Notebook de 14 polegadtas, muito bom \");\r",
+									"     pm.expect(array[0].quantidade).to.be.equal(1);\r",
+									"     pm.expect(array[0]._id).to.be.equal(pm.environment.get('produtoId'));\r",
+									"\r",
+									"});\r",
+									"\r",
+									"} else {\r",
+									"    console.log(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+									"\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/produtos?nome=Macbook pro M3 14 Pol",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"produtos"
+							],
+							"query": [
+								{
+									"key": "_id",
+									"value": "<string>",
+									"disabled": true
+								},
+								{
+									"key": "nome",
+									"value": "Macbook pro M3 14 Pol"
+								},
+								{
+									"key": "preco",
+									"value": "<integer>",
+									"disabled": true
+								},
+								{
+									"key": "descricao",
+									"value": "<string>",
+									"disabled": true
+								},
+								{
+									"key": "quantidade",
+									"value": "<integer>",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Lista de produtos",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/produtos?_id=<string>&nome=<string>&preco=<integer>&descricao=<string>&quantidade=<integer>",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos"
+									],
+									"query": [
+										{
+											"key": "_id",
+											"value": "<string>"
+										},
+										{
+											"key": "nome",
+											"value": "<string>"
+										},
+										{
+											"key": "preco",
+											"value": "<integer>"
+										},
+										{
+											"key": "descricao",
+											"value": "<string>"
+										},
+										{
+											"key": "quantidade",
+											"value": "<integer>"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"quantidade\": \"<number>\",\n  \"produtos\": [\n    {\n      \"nome\": \"<string>\",\n      \"preco\": \"<integer>\",\n      \"descricao\": \"<string>\",\n      \"quantidade\": \"<integer>\",\n      \"_id\": \"<string>\"\n    },\n    {\n      \"nome\": \"<string>\",\n      \"preco\": \"<integer>\",\n      \"descricao\": \"<string>\",\n      \"quantidade\": \"<integer>\",\n      \"_id\": \"<string>\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "editar-produto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Retornou o statusCode 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Valida mensagem que o cadastro do produto foi editado\", function () {\r",
+									"    pm.expect(jsonData.message).to.be.equal(\"Registro alterado com sucesso\")\r",
+									"\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nome\": \"Notebook lenovo\",\n  \"preco\": \"888\",\n  \"descricao\": \"Notebook muito gamer\",\n  \"quantidade\": \"2\"\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/produtos/:_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"produtos",
+								":_id"
+							],
+							"variable": [
+								{
+									"key": "_id",
+									"value": "{{produtoId}}",
+									"description": "(Required) ID do produto"
+								}
+							]
+						},
+						"description": "Não é permitido cadastrar produto com nome já utilizado.\nCaso não seja encontrado usuário com o ID informado é realizado novo cadastro ao invés de alteração.\n"
+					},
+					"response": [
+						{
+							"name": "Alterado com sucesso",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"<string>\",\n  \"preco\": \"<integer>\",\n  \"descricao\": \"<string>\",\n  \"quantidade\": \"<integer>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/produtos/:_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos",
+										":_id"
+									],
+									"variable": [
+										{
+											"key": "_id"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						},
+						{
+							"name": "Cadastro com sucesso",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"<string>\",\n  \"preco\": \"<integer>\",\n  \"descricao\": \"<string>\",\n  \"quantidade\": \"<integer>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/produtos/:_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos",
+										":_id"
+									],
+									"variable": [
+										{
+											"key": "_id"
+										}
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\",\n  \"_id\": \"<string>\"\n}"
+						},
+						{
+							"name": "Já existe produto com esse nome",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"<string>\",\n  \"preco\": \"<integer>\",\n  \"descricao\": \"<string>\",\n  \"quantidade\": \"<integer>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/produtos/:_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos",
+										":_id"
+									],
+									"variable": [
+										{
+											"key": "_id"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						},
+						{
+							"name": "Token ausente, inválido ou expirado",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"<string>\",\n  \"preco\": \"<integer>\",\n  \"descricao\": \"<string>\",\n  \"quantidade\": \"<integer>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/produtos/:_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos",
+										":_id"
+									],
+									"variable": [
+										{
+											"key": "_id"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						},
+						{
+							"name": "Rota exclusiva para administradores (`administrador = true`)",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nome\": \"<string>\",\n  \"preco\": \"<integer>\",\n  \"descricao\": \"<string>\",\n  \"quantidade\": \"<integer>\"\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/produtos/:_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos",
+										":_id"
+									],
+									"variable": [
+										{
+											"key": "_id"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						}
+					]
+				},
+				{
+					"name": "listar-cadastrado-produto-editado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Retornou o statusCode 202\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"     pm.test(\"Valida quantidade de registros na listagem\", function () {\r",
+									"     pm.expect(jsonData).to.have.property('quantidade');\r",
+									"     pm.expect(jsonData.quantidade).to.be.a('number');\r",
+									"     pm.expect(jsonData.quantidade).to.be.at.least(1, \"The number of records should not be zero\");\r",
+									"});\r",
+									"\r",
+									"    const  array = jsonData.produtos;\r",
+									"    pm.test(\"Valida se dados do array são validos\", function () {\r",
+									"    \r",
+									"     pm.expect(array[0]).to.have.property('nome');\r",
+									"     pm.expect(array[0]).to.have.property('preco');\r",
+									"     pm.expect(array[0]).to.have.property('descricao');\r",
+									"     pm.expect(array[0]).to.have.property('quantidade');\r",
+									"     pm.expect(array[0]).to.have.property('_id');\r",
+									"\r",
+									"    });\r",
+									"\r",
+									"    pm.test(\"Valida se retornou os valores esperados do cadastro no produto\", function () {\r",
+									"     pm.expect(array[0].nome).to.be.equal(\"Notebook lenovo\");\r",
+									"     pm.expect(array[0].preco).to.be.equal(888);\r",
+									"     pm.expect(array[0].descricao).to.be.equal(\"Notebook muito gamer\");\r",
+									"     pm.expect(array[0].quantidade).to.be.equal(2);\r",
+									"     pm.expect(array[0]._id).to.be.equal(pm.environment.get('produtoId'));\r",
+									"\r",
+									"});\r",
+									"\r",
+									"} else {\r",
+									"    console.log(\"O status code retornado não é 200. Testes adicionais não foram executados.\");\r",
+									"\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/produtos?nome=Notebook lenovo",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"produtos"
+							],
+							"query": [
+								{
+									"key": "_id",
+									"value": "<string>",
+									"disabled": true
+								},
+								{
+									"key": "nome",
+									"value": "Notebook lenovo"
+								},
+								{
+									"key": "preco",
+									"value": "<integer>",
+									"disabled": true
+								},
+								{
+									"key": "descricao",
+									"value": "<string>",
+									"disabled": true
+								},
+								{
+									"key": "quantidade",
+									"value": "<integer>",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Lista de produtos",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/produtos?_id=<string>&nome=<string>&preco=<integer>&descricao=<string>&quantidade=<integer>",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos"
+									],
+									"query": [
+										{
+											"key": "_id",
+											"value": "<string>"
+										},
+										{
+											"key": "nome",
+											"value": "<string>"
+										},
+										{
+											"key": "preco",
+											"value": "<integer>"
+										},
+										{
+											"key": "descricao",
+											"value": "<string>"
+										},
+										{
+											"key": "quantidade",
+											"value": "<integer>"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"quantidade\": \"<number>\",\n  \"produtos\": [\n    {\n      \"nome\": \"<string>\",\n      \"preco\": \"<integer>\",\n      \"descricao\": \"<string>\",\n      \"quantidade\": \"<integer>\",\n      \"_id\": \"<string>\"\n    },\n    {\n      \"nome\": \"<string>\",\n      \"preco\": \"<integer>\",\n      \"descricao\": \"<string>\",\n      \"quantidade\": \"<integer>\",\n      \"_id\": \"<string>\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "excluir-produto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Retornou o statusCode 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Valida mensagem que o produto foi excluido\", function () {\r",
+									"    pm.expect(jsonData.message).to.be.equal(\"Registro excluído com sucesso\")\r",
+									"\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/produtos/:_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"produtos",
+								":_id"
+							],
+							"variable": [
+								{
+									"key": "_id",
+									"value": "{{produtoId}}",
+									"description": "(Required) ID do produto"
+								}
+							]
+						},
+						"description": "Não é permitido excluir produto que faz parte de carrinho."
+					},
+					"response": [
+						{
+							"name": "Registro excluído com sucesso | Nenhum registro excluído",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/produtos/:_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos",
+										":_id"
+									],
+									"variable": [
+										{
+											"key": "_id"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						},
+						{
+							"name": "Produto faz parte de carrinho",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/produtos/:_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos",
+										":_id"
+									],
+									"variable": [
+										{
+											"key": "_id"
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\",\n  \"idCarrinho\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}"
+						},
+						{
+							"name": "Token ausente, inválido ou expirado",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/produtos/:_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos",
+										":_id"
+									],
+									"variable": [
+										{
+											"key": "_id"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						},
+						{
+							"name": "Rota exclusiva para administradores (`administrador = true`)",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "<API Key>",
+										"description": "Added as a part of security scheme: apikey"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/produtos/:_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"produtos",
+										":_id"
+									],
+									"variable": [
+										{
+											"key": "_id"
+										}
+									]
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"message\": \"<string>\"\n}"
+						}
+					]
+				}
+			]
 		}
 	],
 	"event": [
@@ -855,20 +2233,19 @@
 	],
 	"variable": [
 		{
-			"key": "userName",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "userId",
+			"key": "userIdTemp",
 			"value": ""
 		},
 		{
-			"key": "userEmail",
+			"key": "userNameTemp",
 			"value": ""
 		},
 		{
-			"key": "userPassword",
+			"key": "userEmailTemp",
+			"value": ""
+		},
+		{
+			"key": "userPasswordTemp",
 			"value": ""
 		}
 	]
